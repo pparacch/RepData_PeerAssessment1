@@ -4,14 +4,47 @@ output:
   html_document:
     keep_md: true
 ---
-
-
 ## Loading and preprocessing the data
-
-
+Loading the raw data.
+```{r}
+rawData <- read.csv("activity.csv", stringsAsFactors = FALSE)
+```
+Printing out some information about `rawData`.
+```{r}
+summary(rawData)
+```
+Checking the type of features in `rawData`.
+```{r  collapse = TRUE}
+class(rawData$steps)
+class(rawData$date)
+class(rawData$interval)
+```
+Transforming the `rawData$date` feature from a `character` format to a `Date` format.
+```{r collapse=TRUE}
+rawData$date <- as.Date(rawData$date)
+class(rawData$date)
+```
 
 ## What is mean total number of steps taken per day?
+Calculating the total number of steps taken per day (ignoring missing values)
+```{r}
+stepsPerDay  <- aggregate(steps ~ date, data=rawData, sum, na.action = na.omit)
+head(stepsPerDay)
+```
+Make an histogram of the total number of steps taken each day.
+```{r histogram, fig.height=4}
+hist(stepsPerDay$steps, breaks=50, main="Total number of steps taken each day", xlab = "steps")
+```  
 
+```{r echo = FALSE}
+stepsPerDayMean <- mean(stepsPerDay$steps)
+stepsPerDayMedian <- median(stepsPerDay$steps)
+```
+Calculate and report the mean and median of the total number of steps taken per day. 
+```{r collapse=TRUE}
+mean(stepsPerDay$steps)
+median(stepsPerDay$steps)
+```
 
 
 ## What is the average daily activity pattern?
