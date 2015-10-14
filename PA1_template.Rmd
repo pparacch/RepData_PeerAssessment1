@@ -6,10 +6,11 @@ output:
 ---
 
 ## Loading and preprocessing the data
-Loading the raw data.
+####Loading the raw data.
 ```{r}
 rawData <- read.csv("activity.csv", stringsAsFactors = FALSE)
 ```
+####Preprocessing the raw data.
 Printing out some information about `rawData`.
 ```{r}
 summary(rawData)
@@ -27,28 +28,31 @@ class(rawData$date)
 ```
 
 ## What is mean total number of steps taken per day?
-Calculating the total number of steps taken per day (ignoring missing values)
+####Calculating the total number of steps taken per day
+Such claculation is done using the `aggregate` function (ignoring missing values).
 ```{r}
 stepsPerDay  <- aggregate(steps ~ date, data=rawData, sum, na.action = na.omit)
 head(stepsPerDay)
 ```
-Make an histogram of the total number of steps taken each day.
+####Make an histogram of the total number of steps taken each day.
 ```{r histogram, fig.height=4}
 hist(stepsPerDay$steps, breaks=50, main="Total number of steps taken each day", xlab = "steps")
 ```  
 
+
+####Calculate and report the mean and median of the total number of steps taken per day. 
 ```{r echo = FALSE}
 stepsPerDayMean <- mean(stepsPerDay$steps)
 stepsPerDayMedian <- median(stepsPerDay$steps)
 ```
-Calculate and report the mean and median of the total number of steps taken per day. 
 ```{r collapse=TRUE}
 mean(stepsPerDay$steps)
 median(stepsPerDay$steps)
 ```
 
 ## What is the average daily activity pattern?
-Calculating the average number of steps taken per interval - averaged across all days (ignoring missing values).
+####Make a time series plot.
+Prepare the data calculating the average number of steps taken per interval - averaged across all days (ignoring missing values).
 ```{r}
 stepsPerInterval  <- aggregate(steps ~ interval, data=rawData, mean, na.action = na.omit)
 head(stepsPerInterval)
@@ -58,19 +62,78 @@ The time series plot  of the 5-minute interval (x-axis) and the average number o
 plot(stepsPerInterval$interval, stepsPerInterval$steps, type = "l", main="Average number of steps per 5-minute interval", xlab="5-minute interval", ylab="average no of steps")
 ```
 
+
+####Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps? 
 ```{r echo=FALSE}
 max_interval <- stepsPerInterval[which.max(stepsPerInterval$steps),1]
 max_steps <- stepsPerInterval[which.max(stepsPerInterval$steps),2]
 ```
-Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps? It is the interval `r max_interval` with `r max_steps` steps.
+It is the interval __`r max_interval`__ with __`r max_steps`__ steps.
 
 ```{r collapse=TRUE}
 stepsPerInterval[which.max(stepsPerInterval$steps),]
 ```
 
-
 ## Imputing missing values
+####Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs).
 
+An oveview of such infomrtiona can be given using the `summary` function on the raw data. One information provided is if a feature and its measurements contains NAs and the number of NAs.
+```{r}
+summary(rawData)
+```
+We can see that steps is the only feature having NAs - specifically there are 2304 NAs.
 
+Another way to calculate the number of NAs can be found below.
+```{r}
+noOfNAs <- sum(is.na(rawData))
+noOfNAs
+```
+####Devise a strategy for filling in all of the missing values in the dataset. 
+One possible strategy is to use the mean of the number of steps calculated for the same 5-minutes interval - averaged across al days for all of the available measurements ignoring the NAs for such calculation.
+
+####Create a new dataset that is equal to the original dataset but with the missing data filled in.
+Creating the dataset containg the mean of the number of steps calculated for the same 5-minutes interval - averaged across al days for all of the available measurements ignoring the NAs for such calculation.
+```{r}
+stepsPerInterval  <- aggregate(steps ~ interval, data=rawData, mean, na.action = na.omit)
+```
+Checking which feature/ columns in the raw dataset contain NAs.
+```{r collapse = TRUE}
+any(is.na(rawData$steps))
+any(is.na(rawData$date))
+any(is.na(rawData$interval))
+```
+We can see that `steps` is the only feature/ measurement having NAs. 
+Replacing the NAs in `steps` with the mean of the number of steps calculated for the same 5-minutes interval in a new dataset `rawDataNoNAs`.
+```{r collapse = TRUE}
+rawDataNoNAs <- rawData
+stepsNAsIdx <- which(is.na(rawDataNoNAs$steps))
+for (i in stepsNAsIdx){
+    j <- rawDataNoNAs$interval[i]
+    value <- stepsPerInterval$steps[which(stepsPerInterval$interval == j)]
+    rawDataNoNAs$steps[i] <- value
+}
+```
+Verify that there are no more NAs in `rawDataNoNAs`.
+```{r collapse = TRUE}
+summary(rawDataNoNAs)
+head(rawDataNoNAs)
+```
+####Make a histogram of the total number of steps taken each day.
+```{r histogram2, fig.height=4}
+stepsPerDayNoNAs  <- aggregate(steps ~ date, data=rawDataNoNAs, sum, na.action = na.omit)
+hist(stepsPerDayNoNAs$steps, breaks=50, main="Total number of steps taken each day", xlab = "steps")
+```
+
+####Calculate and report the mean and median total number of steps taken per day. 
+```{r collapse=TRUE}
+mean(stepsPerDayNoNAs$steps)
+median(stepsPerDayNoNAs$steps)
+```
+
+####Do these values differ from the estimates from the first part of the assignment? 
+All of the missing days has been replaced with the mean of the number of steps taken per day (calculated omitting the NAs).
+
+####What is the impact of imputing missing data on the estimates of the total daily number of steps?
+Mean is unchanged - having exactly added the mean of the number of steps taken per day for the missing days. And as a consequence the median is moving towards the mean.
 
 ## Are there differences in activity patterns between weekdays and weekends?
