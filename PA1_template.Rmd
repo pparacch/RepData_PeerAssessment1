@@ -4,7 +4,9 @@ output:
   html_document:
     keep_md: true
 ---
-
+```{r echo = FALSE, results="hide"}
+Sys.setlocale("LC_ALL", "C")
+```
 ## Loading and preprocessing the data
 ####Loading the raw data.
 ```{r}
@@ -118,6 +120,7 @@ Verify that there are no more NAs in `rawDataNoNAs`.
 summary(rawDataNoNAs)
 head(rawDataNoNAs)
 ```
+
 ####Make a histogram of the total number of steps taken each day.
 ```{r histogram2, fig.height=4}
 stepsPerDayNoNAs  <- aggregate(steps ~ date, data=rawDataNoNAs, sum, na.action = na.omit)
@@ -137,3 +140,30 @@ All of the missing days has been replaced with the mean of the number of steps t
 Mean is unchanged - having exactly added the mean of the number of steps taken per day for the missing days. And as a consequence the median is moving towards the mean.
 
 ## Are there differences in activity patterns between weekdays and weekends?
+####Create a new factor variable in the dataset
+Create a new factor variable in the dataset with two levels – “weekday” and “weekend” indicating whether a given date is a weekday or weekend day, using the `rawDataNoNAs` dataset.
+```{r}
+rawDataNoNAs$weekday <- weekdays(rawDataNoNAs$date, TRUE)
+rawDataNoNAs$isweekend <- as.numeric(rawDataNoNAs$weekday == "Sat" | rawDataNoNAs$weekday == "Sun")
+rawDataNoNAs$typeOfDay <- factor(rawDataNoNAs$isweekend)
+levels(rawDataNoNAs$typeOfDay) <- c("weekday", "weekend")
+```
+Structure of the `rawNoNAs`dataset is summarized here below. As we can see a new feature `typeOfDay` has been introduced to indicate if the given day is a week day or not as a `factor`with e levels `weekday`and `weekend`.
+```{r collapse=TRUE}
+summary(rawDataNoNAs)
+is.factor((rawDataNoNAs$typeOfDay))
+```
+
+####Make a plot
+Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis).
+```{r multipanleplot,fig.height=8, fig.width= 8, collapse=TRUE}
+weekendData <- subset(rawDataNoNAs, rawDataNoNAs$typeOfDay == "weekend")
+stepsPerIntervalWeekend  <- aggregate(steps ~ interval, data=weekendData, mean, na.action = na.omit)
+weekdayData <- subset(rawDataNoNAs, rawDataNoNAs$typeOfDay == "weekday")
+stepsPerIntervalWeekday  <- aggregate(steps ~ interval, data=weekdayData, mean, na.action = na.omit)
+stepsPerIntervalWeekend$typeOfDay <- "weekend"
+stepsPerIntervalWeekday$typeOfDay <- "weekday"
+weekData <- rbind(stepsPerIntervalWeekend, stepsPerIntervalWeekday)
+library(lattice)
+xyplot(steps ~ interval | typeOfDay, weekData,layout = c(1,2),type = "l", ylab="Number of steps", xlab="Interval")
+```
